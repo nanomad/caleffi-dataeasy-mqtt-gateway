@@ -9,6 +9,7 @@ console.log('Happy developing ✨')
 
 interface Configuration {
     devices: string[];
+    refreshIntervalMinutes: number;
     api: DataEasyClientConfig,
     mqtt: MqttPublisherConfig
 }
@@ -16,6 +17,7 @@ interface Configuration {
 function getConfig(): Configuration {
     return {
         devices: config.get<string>('devices').split(","),
+        refreshIntervalMinutes: config.has('refreshIntervalMinutes') ? config.get('refreshIntervalMinutes') : 5,
         api: {
             baseURL: config.get("api.baseURL"),
             username: config.get("api.username"),
@@ -44,11 +46,11 @@ async function fetchData(meter: MeterInfo, channels: ChannelsDB) {
 }
 
 
-async function main() {
+async function main(config: Configuration) {
     const metersDB = await client.getMeters();
     for (const meter of metersDB.meters) {
         const deviceSerial = meter.ID_DEVICE;
-        const deviceIdx = devices.indexOf(deviceSerial);
+        const deviceIdx = config.devices.indexOf(deviceSerial);
         if (deviceIdx < 0) {
             console.debug(`Skipped device ${deviceSerial}`);
             continue;
@@ -61,7 +63,7 @@ async function main() {
         mqtt.onDeviceDiscovered(meter, channels);
 
         scheduler.addSimpleIntervalJob(new SimpleIntervalJob({
-                minutes: 15,
+                minutes: config.refreshIntervalMinutes,
                 runImmediately: true,
             },
             new AsyncTask(
@@ -78,11 +80,10 @@ async function main() {
 }
 
 const swConfig = getConfig()
-const devices = swConfig.devices;
 const client = new DataEasyClientImpl(swConfig.api);
 const mqtt = new MqttPublisherImpl(swConfig.mqtt);
 const scheduler = new ToadScheduler();
-main().then(() => {
+main(swConfig).then(() => {
     console.log("Main function launched")
 }, (err: Error) => {
     console.error("Main function crashed");
