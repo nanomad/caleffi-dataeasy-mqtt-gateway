@@ -1,5 +1,5 @@
 import {connect, MqttClient} from "mqtt";
-import {ChannelsDB, MeterInfo, MeterReading, MeterReadings} from "../api/types";
+import {ChannelsDB, MeterInfo, MeterReadings} from "../api/types";
 import {decodeLabel, decodeUnit} from "../api/utils";
 
 export interface MqttPublisherConfig {
@@ -14,7 +14,7 @@ export interface MqttPublisherConfig {
 
     topicRoot: string;
 
-    haDiscoveryPrefix?: string;
+    haDiscoveryPrefix: string;
 }
 
 interface MqttPublisher {
@@ -33,7 +33,7 @@ export class MqttPublisherImpl implements MqttPublisher {
     private readonly client: MqttClient;
     private readonly topicRoot: string;
     private readonly lwtTopic: string;
-    private readonly haDiscoveryPrefix?: string;
+    private readonly haDiscoveryPrefix: string;
 
     private readonly meters: Map<string, MeterEntry> = new Map<string, MeterEntry>();
 
@@ -57,21 +57,22 @@ export class MqttPublisherImpl implements MqttPublisher {
             }
         })
 
-        if (this.haDiscoveryPrefix) {
-            const haLwtTopic = `${this.haDiscoveryPrefix}/status`;
-            this.client.subscribe(haLwtTopic);
-            this.client.on('message', (topic, payload, _packet) => {
-                if (topic == haLwtTopic && payload.toString() === 'online') {
-                    this.#publishAllHaDiscoveryMessages()
-                }
-            })
-        }
+        const haLwtTopic = `${this.haDiscoveryPrefix}/status`;
+
+        this.client.on('message', (topic, payload, _packet) => {
+            const payloadAsStr = payload.toString();
+            console.debug("Received message", topic, payloadAsStr);
+            if (topic == haLwtTopic && payloadAsStr === 'online') {
+                this.#publishAllHaDiscoveryMessages()
+            }
+        })
 
         this.client.on('connect', (_socket) => {
             this.#markAsOnline()
         })
 
         this.client.connect();
+        this.client.subscribe(haLwtTopic);
         this.#markAsOnline();
     }
 
@@ -132,9 +133,6 @@ export class MqttPublisherImpl implements MqttPublisher {
 
 
     #publishHaDiscoveryMessage(meter: MeterInfo, channels: ChannelsDB) {
-        if (!this.haDiscoveryPrefix) {
-            return
-        }
         const deviceSerial = meter.ID_DEVICE;
         console.log(`Publishing HA discovery prefix for device ${deviceSerial}`)
         const commonAttrs = {
