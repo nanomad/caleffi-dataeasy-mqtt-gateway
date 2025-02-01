@@ -121,7 +121,7 @@ export class MqttPublisherImpl implements MqttPublisher {
     }
 
     #markAsOnline() {
-        this.client.publish(this.lwtTopic, 'online')
+        this.client.publish(this.lwtTopic, 'online', {retain: true})
     }
 
     #publishAllHaDiscoveryMessages() {
