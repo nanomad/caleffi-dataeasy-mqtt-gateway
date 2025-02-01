@@ -1,7 +1,7 @@
 import {AsyncTask, SimpleIntervalJob, ToadScheduler} from "toad-scheduler";
 import {DataEasyClientConfig, DataEasyClientImpl} from "./api/client";
 import {MqttPublisherConfig, MqttPublisherImpl} from "./publisher/mqtt_publisher";
-import * as config from 'config';
+import config = require("config");
 import {ChannelsDB, MeterInfo} from "./api/types";
 
 console.log('Happy developing ✨')
