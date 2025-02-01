@@ -55,8 +55,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ steps.lowercase-repository.outputs.lowercase }}/saic-mqtt-gateway:latest
-            ghcr.io/${{ steps.lowercase-repository.outputs.lowercase }}/saic-mqtt-gateway:${{ env.RELEASE_VERSION }}
+            ghcr.io/${{ steps.lowercase-repository.outputs.lowercase }}/caleffi-dataeasy-mqtt-gateway:latest
+            ghcr.io/${{ steps.lowercase-repository.outputs.lowercase }}/caleffi-dataeasy-mqtt-gateway:${{ env.RELEASE_VERSION }}
 
       - name: Build and push (GHCR + DockerHub)
         uses: docker/build-push-action@v5
@@ -66,7 +66,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ steps.lowercase-repository.outputs.lowercase }}/saic-mqtt-gateway:latest
-            ghcr.io/${{ steps.lowercase-repository.outputs.lowercase }}/saic-mqtt-gateway:${{ env.RELEASE_VERSION }}
+            ghcr.io/${{ steps.lowercase-repository.outputs.lowercase }}/caleffi-dataeasy-mqtt-gateway:latest
+            ghcr.io/${{ steps.lowercase-repository.outputs.lowercase }}/caleffi-dataeasy-mqtt-gateway:${{ env.RELEASE_VERSION }}
             ${{ secrets.DOCKERHUB_ORGANIZATION != null && format('{0}/caleffi-dataeasy-mqtt-gateway:latest', secrets.DOCKERHUB_ORGANIZATION)}}
             ${{ secrets.DOCKERHUB_ORGANIZATION != null && format('{0}/caleffi-dataeasy-mqtt-gateway:{1}', secrets.DOCKERHUB_ORGANIZATION, env.RELEASE_VERSION)}}
