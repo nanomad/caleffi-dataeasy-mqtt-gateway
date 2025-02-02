@@ -1,4 +1,4 @@
-import {connect, MqttClient} from "mqtt";
+import {MqttClient, connect} from "mqtt";
 import {ChannelsDB, MeterInfo, MeterReadings} from "../api/types";
 import {decodeLabel, decodeUnit} from "../api/utils";
 
@@ -38,13 +38,13 @@ export class MqttPublisherImpl implements MqttPublisher {
     private readonly meters: Map<string, MeterEntry> = new Map<string, MeterEntry>();
 
     constructor(config: MqttPublisherConfig) {
-        const brokerUrl = `${config.protocol}://${config.host}:${config.port}`
+        const brokerPort = config.port;
+        const brokerUrl = `${config.protocol}://${config.host}:${brokerPort.toString()}`;
         this.topicRoot = config.topicRoot
         this.lwtTopic = `${this.topicRoot}/_internal/lwt`;
         this.haDiscoveryPrefix = config.haDiscoveryPrefix
 
         this.client = connect(brokerUrl, {
-            port: config.port,
             username: config.username,
             password: config.password,
             clientId: config.clientId,
@@ -59,7 +59,7 @@ export class MqttPublisherImpl implements MqttPublisher {
 
         const haLwtTopic = `${this.haDiscoveryPrefix}/status`;
 
-        this.client.on('message', (topic, payload, _packet) => {
+        this.client.on('message', (topic, payload) => {
             const payloadAsStr = payload.toString();
             console.debug("Received message", topic, payloadAsStr);
             if (topic == haLwtTopic && payloadAsStr === 'online') {
@@ -67,7 +67,7 @@ export class MqttPublisherImpl implements MqttPublisher {
             }
         })
 
-        this.client.on('connect', (_socket) => {
+        this.client.on('connect', () => {
             this.#markAsOnline()
         })
 
@@ -94,10 +94,7 @@ export class MqttPublisherImpl implements MqttPublisher {
         for (const reading of readings.data) {
             this.client.publish(
                 this.#getTopicForChannel(meter, reading.channelIdx),
-                JSON.stringify({
-                    ts: readings.ts,
-                    ...reading
-                }),
+                JSON.stringify(reading),
                 {retain: true}
             );
         }
@@ -110,7 +107,7 @@ export class MqttPublisherImpl implements MqttPublisher {
 
 
     #getTopicForChannel(device: MeterInfo, channelIdx: number): string {
-        return `${this.#getTopicForDevice(device)}/${channelIdx}`;
+        return `${this.#getTopicForDevice(device)}/${channelIdx.toString()}`;
     }
 
     #getLastUpdateTopic(meter: MeterInfo) {
@@ -147,7 +144,7 @@ export class MqttPublisherImpl implements MqttPublisher {
             const channel = channels.channels[i];
             const originalUnit = decodeUnit(channel)
             const {deviceClass, stateClass, unit} = this.#decodeHaDeviceAndStateClass(originalUnit);
-            const deviceUniqueId = `caleffi_dataeasy_${deviceSerial}_${i}`;
+            const deviceUniqueId = `caleffi_dataeasy_${deviceSerial}_${i.toString()}`;
             const discoveryMessage = {
                 "name": decodeLabel(channel),
                 "unique_id": deviceUniqueId,

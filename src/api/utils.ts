@@ -1,7 +1,7 @@
-import {ChanelDefinition} from "./types";
+import {ChannelDefinition} from "./types";
 import {isNullOrUndefined} from "../utils";
 
-export function decodeLabel(definition: ChanelDefinition): string {
+export function decodeLabel(definition: ChannelDefinition): string {
     let label = definition.LABEL;
     if (definition.T != "0") {
         label += " - " + definition.T;
@@ -15,7 +15,7 @@ export function decodeLabel(definition: ChanelDefinition): string {
     return label;
 }
 
-export function decodeUnit(definition: ChanelDefinition): string | null {
+export function decodeUnit(definition: ChannelDefinition): string | null {
     let units;
     if (
         !isNullOrUndefined(definition.Units)
@@ -30,8 +30,8 @@ export function decodeUnit(definition: ChanelDefinition): string | null {
 }
 
 
-export function decodeMultiplier(definition: ChanelDefinition): number {
-    if (definition.Multiplier !== null && definition.Multiplier !== undefined) {
+export function decodeMultiplier(definition: ChannelDefinition): number {
+    if (!isNullOrUndefined(definition.Multiplier)) {
         return Number(definition.Multiplier);
     } else {
         return 1.0;

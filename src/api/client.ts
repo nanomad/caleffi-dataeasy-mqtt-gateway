@@ -1,5 +1,5 @@
 import axios, {AxiosInstance, AxiosResponse} from "axios";
-import {ChannelsDB, MeterInfo, MeterReading, MeterReadings, MetersDB} from "./types";
+import {ChannelDefinition, ChannelsDB, MeterInfo, MeterReading, MeterReadings, MetersDB} from "./types";
 
 export interface DataEasyClientConfig {
     baseURL: string;
@@ -30,7 +30,7 @@ export class DataEasyClientImpl implements DataEasyClient {
 
     async getMeters(): Promise<MetersDB> {
         const response = await this.#doGet("DB/REGISTRY_METER.dbs");
-        if (response.data.match(/ERROR/)) {
+        if (/ERROR/.exec(response.data)) {
             throw new Error("Error getting meter list")
         }
         return new MetersDB(DataEasyClientImpl.#parseDeviceRecords(response.data));
@@ -43,17 +43,17 @@ export class DataEasyClientImpl implements DataEasyClient {
 
         const payload = response.data;
 
-        if (payload.match(/ERROR/) || response.status === 404) {
+        if ((/ERROR/.exec(payload)) || response.status === 404) {
             throw new Error("Could not get DB Of Device");
         }
 
         const lines = payload.split("\n");
-        const result = [];
+        const result: ChannelDefinition[] = [];
 
         for (let g = 0; g < lines.length - 1; g += 2) {
-            let keys = lines[g].split(";");
-            let values = lines[g + 1].split(";");
-            let entry: any = {};
+            const keys = lines[g].split(";");
+            const values = lines[g + 1].split(";");
+            const entry: Record<string, string> = {};
 
             if (values.length > 2) {
                 for (let j = 1; j < values.length - 1; j++) {
@@ -61,7 +61,7 @@ export class DataEasyClientImpl implements DataEasyClient {
                 }
             }
 
-            result.push(entry);
+            result.push(((entry as unknown) as ChannelDefinition));
         }
 
         return new ChannelsDB(result)
@@ -73,7 +73,7 @@ export class DataEasyClientImpl implements DataEasyClient {
         const response = await this.#doGet(requestUri);
 
         const payload = response.data;
-        if (payload.match(/ERROR/) || payload === "") {
+        if ((/ERROR/.exec(payload)) || payload === "") {
             throw new Error("Could not get last log of device");
         }
 
@@ -91,7 +91,7 @@ export class DataEasyClientImpl implements DataEasyClient {
         return new MeterReadings(ts, readings);
     }
 
-    async #doGet(path: string): Promise<AxiosResponse<string, any>> {
+    async #doGet(path: string): Promise<AxiosResponse<string>> {
         return await this.client.get(path, {
             headers: {
                 'Accept': 'text/plain',

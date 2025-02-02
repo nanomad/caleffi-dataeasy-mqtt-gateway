@@ -1,11 +1,8 @@
 import {AsyncTask, SimpleIntervalJob, ToadScheduler} from "toad-scheduler";
+import {ChannelsDB, MeterInfo} from "./api/types";
 import {DataEasyClientConfig, DataEasyClientImpl} from "./api/client";
 import {MqttPublisherConfig, MqttPublisherImpl} from "./publisher/mqtt_publisher";
-import config = require("config");
-import {ChannelsDB, MeterInfo} from "./api/types";
-
-console.log('Happy developing ✨')
-
+import config from 'config';
 
 interface Configuration {
     devices: string[];
@@ -58,7 +55,8 @@ async function main(config: Configuration) {
         console.info(`Found requested device with SN ${deviceSerial}`)
 
         const channels = await client.getMeterChannels(meter);
-        console.info(`Fetched ${channels.channels.length} channels for meter ${deviceSerial}`);
+        const channelsNum = channels.channels.length;
+        console.info(`Fetched ${channelsNum.toString()} channels for meter ${deviceSerial}`);
 
         mqtt.onDeviceDiscovered(meter, channels);
 
@@ -85,6 +83,6 @@ const mqtt = new MqttPublisherImpl(swConfig.mqtt);
 const scheduler = new ToadScheduler();
 main(swConfig).then(() => {
     console.log("Main function launched")
-}, (err: Error) => {
-    console.error("Main function crashed");
+}, (err: unknown) => {
+    console.error("Main function crashed", err);
 })

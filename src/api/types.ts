@@ -1,5 +1,5 @@
-import {isNullOrUndefined, isNumber} from "../utils";
 import {decodeLabel, decodeMultiplier, decodeUnit} from "./utils";
+import {isNullOrUndefined, isNumber} from "../utils";
 
 export class MeterReading {
     channelIdx: number
@@ -8,7 +8,7 @@ export class MeterReading {
     value: string | number | null;
     unit: string | null;
 
-    constructor(channelIdx: number, rawValue: string, definition: ChanelDefinition) {
+    constructor(channelIdx: number, rawValue: string, definition: ChannelDefinition) {
         this.channelIdx = channelIdx
         this.label = decodeLabel(definition);
         this.description = definition.Description
@@ -16,9 +16,9 @@ export class MeterReading {
         this.unit = decodeUnit(definition);
     }
 
-    static #decodeValue(rawValue: string, definition: ChanelDefinition) {
+    static #decodeValue(rawValue: string, definition: ChannelDefinition) {
         if (!isNullOrUndefined(rawValue)) {
-            let multiplier = decodeMultiplier(definition);
+            const multiplier = decodeMultiplier(definition);
             if (isNumber(rawValue)) {
                 if (multiplier != 0) {
                     return Math.round(multiplier * Number(rawValue) * 100) / 100;
@@ -46,11 +46,11 @@ export class MetersDB {
 }
 
 export class ChannelsDB {
-    constructor(readonly channels: ChanelDefinition[]) {
+    constructor(readonly channels: ChannelDefinition[]) {
     }
 }
 
-export interface ChanelDefinition {
+export interface ChannelDefinition {
     SU: string;
     ST: string;
     T: string;
