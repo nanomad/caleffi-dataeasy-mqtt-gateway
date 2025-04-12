@@ -143,7 +143,7 @@ export class MqttPublisherImpl implements MqttPublisher {
         for (let i = 0; i < channels.channels.length; i++) {
             const channel = channels.channels[i];
             const originalUnit = decodeUnit(channel)
-            const {deviceClass, stateClass, unit} = this.#decodeHaDeviceAndStateClass(originalUnit);
+            const {deviceClass, stateClass, unit, scalingFactor} = this.#decodeHaDeviceAndStateClass(originalUnit);
             const deviceUniqueId = `caleffi_dataeasy_${deviceSerial}_${i.toString()}`;
             const discoveryMessage = {
                 "name": decodeLabel(channel),
@@ -152,7 +152,7 @@ export class MqttPublisherImpl implements MqttPublisher {
                 "state_class": stateClass,
                 "unit_of_measurement": unit,
                 "state_topic": this.#getTopicForChannel(meter, i),
-                "value_template": "{{ value_json.value }}",
+                "value_template": scalingFactor == null ? "{{ value_json.value }}" : `{{ value_json.value | float(0) * ${scalingFactor.toString()} }}`,
                 ...commonAttrs,
             }
             this.client.publish(
@@ -177,14 +177,25 @@ export class MqttPublisherImpl implements MqttPublisher {
     }
 
     #decodeHaDeviceAndStateClass(unit: string | null) {
-        let deviceClass = null
-        let stateClass = null
+        let deviceClass: string | null = null
+        let stateClass: string | null = null
+        let scalingFactor: number | null = null
         if (unit) {
             switch (unit) {
                 case "C":
+                    unit = "°C"
+                    deviceClass = "temperature"
+                    break
                 case "F":
+                    unit = "°F"
+                    deviceClass = "temperature"
+                    break
                 case "K":
+                    deviceClass = "temperature"
+                    break
                 case "mK":
+                    unit = "K"
+                    scalingFactor = 0.001
                     deviceClass = "temperature"
                     break;
                 case "kWh":
@@ -205,6 +216,6 @@ export class MqttPublisherImpl implements MqttPublisher {
                     break;
             }
         }
-        return {deviceClass, stateClass, unit};
+        return {deviceClass, stateClass, unit, scalingFactor};
     }
 }
