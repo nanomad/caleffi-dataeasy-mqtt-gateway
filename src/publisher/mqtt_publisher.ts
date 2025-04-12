@@ -1,6 +1,6 @@
 import {MqttClient, connect} from "mqtt";
-import {ChannelsDB, MeterInfo, MeterReadings} from "../api/types";
-import {decodeLabel, decodeUnit} from "../api/utils";
+import {ChannelsDB, MeterInfo, MeterReadings} from "../api/types.js";
+import {decodeLabel, decodeUnit} from "../api/utils.js";
 
 export interface MqttPublisherConfig {
     host: string;

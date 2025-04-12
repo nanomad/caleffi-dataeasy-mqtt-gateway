@@ -1,5 +1,5 @@
-import {ChannelDefinition} from "./types";
-import {isNullOrUndefined} from "../utils";
+import {ChannelDefinition} from "./types.js";
+import {isNullOrUndefined} from "../utils.js";
 
 export function decodeLabel(definition: ChannelDefinition): string {
     let label = definition.LABEL;

@@ -1,5 +1,5 @@
-import {decodeLabel, decodeMultiplier, decodeUnit} from "./utils";
-import {isNullOrUndefined, isNumber} from "../utils";
+import {decodeLabel, decodeMultiplier, decodeUnit} from "./utils.js";
+import {isNullOrUndefined, isNumber} from "../utils.js";
 
 export class MeterReading {
     channelIdx: number

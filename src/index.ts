@@ -1,7 +1,7 @@
 import {AsyncTask, SimpleIntervalJob, ToadScheduler} from "toad-scheduler";
-import {ChannelsDB, MeterInfo} from "./api/types";
-import {DataEasyClientConfig, DataEasyClientImpl} from "./api/client";
-import {MqttPublisherConfig, MqttPublisherImpl} from "./publisher/mqtt_publisher";
+import {ChannelsDB, MeterInfo} from "./api/types.js";
+import {DataEasyClientConfig, DataEasyClientImpl} from "./api/client.js";
+import {MqttPublisherConfig, MqttPublisherImpl} from "./publisher/mqtt_publisher.js";
 import config from 'config';
 
 interface Configuration {

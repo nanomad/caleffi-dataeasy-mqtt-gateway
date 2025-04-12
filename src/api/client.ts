@@ -1,5 +1,5 @@
 import axios, {AxiosInstance, AxiosResponse} from "axios";
-import {ChannelDefinition, ChannelsDB, MeterInfo, MeterReading, MeterReadings, MetersDB} from "./types";
+import {ChannelDefinition, ChannelsDB, MeterInfo, MeterReading, MeterReadings, MetersDB} from "./types.js";
 
 export interface DataEasyClientConfig {
     baseURL: string;
