@@ -140,6 +140,7 @@ export class MqttPublisherImpl implements MqttPublisher {
                 "serial_number": deviceSerial,
             }
         }
+        const domain = 'sensor'
         for (let i = 0; i < channels.channels.length; i++) {
             const channel = channels.channels[i];
             const originalUnit = decodeUnit(channel)
@@ -147,7 +148,7 @@ export class MqttPublisherImpl implements MqttPublisher {
             const deviceUniqueId = `caleffi_dataeasy_${deviceSerial}_${i.toString()}`;
             const discoveryMessage = {
                 "name": decodeLabel(channel),
-                "unique_id": deviceUniqueId,
+                "default_entity_id ": `${domain}.${deviceUniqueId}`,
                 "device_class": deviceClass,
                 "state_class": stateClass,
                 "unit_of_measurement": unit,
@@ -156,7 +157,7 @@ export class MqttPublisherImpl implements MqttPublisher {
                 ...commonAttrs,
             }
             this.client.publish(
-                `${this.haDiscoveryPrefix}/sensor/${deviceSerial}/${deviceUniqueId}/config`,
+                `${this.haDiscoveryPrefix}/${domain}/${deviceSerial}/${deviceUniqueId}/config`,
                 JSON.stringify(discoveryMessage),
                 {retain: true}
             );
@@ -164,13 +165,13 @@ export class MqttPublisherImpl implements MqttPublisher {
         const deviceUniqueId = `caleffi_dataeasy_${deviceSerial}_last_update`;
         const discoveryMessage = {
             "name": "Last Update",
-            "unique_id": deviceUniqueId,
+            "default_entity_id": `${domain}.${deviceUniqueId}`,
             "device_class": "timestamp",
             "state_topic": this.#getLastUpdateTopic(meter),
             ...commonAttrs,
         }
         this.client.publish(
-            `${this.haDiscoveryPrefix}/sensor/${deviceSerial}/${deviceUniqueId}/config`,
+            `${this.haDiscoveryPrefix}/${domain}/${deviceSerial}/${deviceUniqueId}/config`,
             JSON.stringify(discoveryMessage),
             {retain: true}
         );
