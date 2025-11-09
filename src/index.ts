@@ -3,6 +3,7 @@ import {ChannelsDB, MeterInfo} from "./api/types.js";
 import {DataEasyClientConfig, DataEasyClientImpl} from "./api/client.js";
 import {MqttPublisherConfig, MqttPublisherImpl} from "./publisher/mqtt_publisher.js";
 import config from 'config';
+import {logger} from './logging.js';
 
 interface Configuration {
     devices: string[];
@@ -36,10 +37,10 @@ function getConfig(): Configuration {
 
 async function fetchData(meter: MeterInfo, channels: ChannelsDB) {
     const meterReadings = await client.getLastMeterReadings(meter, channels);
-    console.info(`Got readings for meter ${meter.ID_DEVICE}`)
+    logger.info(`Got readings for meter ${meter.ID_DEVICE}`)
 
     mqtt.onDataReceived(meter, meterReadings);
-    console.info(`Published readings for meter ${meter.ID_DEVICE}`)
+    logger.info(`Published readings for meter ${meter.ID_DEVICE}`)
 }
 
 
@@ -49,14 +50,14 @@ async function main(config: Configuration) {
         const deviceSerial = meter.ID_DEVICE;
         const deviceIdx = config.devices.indexOf(deviceSerial);
         if (deviceIdx < 0) {
-            console.debug(`Skipped device ${deviceSerial}`);
+            logger.debug(`Skipped device ${deviceSerial}`);
             continue;
         }
-        console.info(`Found requested device with SN ${deviceSerial}`)
+        logger.info(`Found requested device with SN ${deviceSerial}`)
 
         const channels = await client.getMeterChannels(meter);
         const channelsNum = channels.channels.length;
-        console.info(`Fetched ${channelsNum.toString()} channels for meter ${deviceSerial}`);
+        logger.info(`Fetched ${channelsNum.toString()} channels for meter ${deviceSerial}`);
 
         mqtt.onDeviceDiscovered(meter, channels);
 
@@ -70,7 +71,7 @@ async function main(config: Configuration) {
                     await fetchData(meter, channels);
                 },
                 (err: Error) => {
-                    console.error(`Error while fetching data for device ${deviceSerial}`, err);
+                    logger.error(err, `Error while fetching data for device ${deviceSerial}`);
                 }
             )
         ));
@@ -82,7 +83,7 @@ const client = new DataEasyClientImpl(swConfig.api);
 const mqtt = new MqttPublisherImpl(swConfig.mqtt);
 const scheduler = new ToadScheduler();
 main(swConfig).then(() => {
-    console.log("Main function launched")
+    logger.info("Main function launched")
 }, (err: unknown) => {
-    console.error("Main function crashed", err);
+    logger.error(err, "Main function crashed");
 })

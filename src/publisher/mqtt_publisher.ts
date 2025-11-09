@@ -1,6 +1,7 @@
 import {MqttClient, connect} from "mqtt";
 import {ChannelsDB, MeterInfo, MeterReadings} from "../api/types.js";
 import {decodeLabel, decodeUnit} from "../api/utils.js";
+import {logger} from "../logging.js";
 
 export interface MqttPublisherConfig {
     host: string;
@@ -61,7 +62,7 @@ export class MqttPublisherImpl implements MqttPublisher {
 
         this.client.on('message', (topic, payload) => {
             const payloadAsStr = payload.toString();
-            console.debug("Received message", topic, payloadAsStr);
+            logger.debug({'topic': topic, 'payload': payloadAsStr}, "Received message");
             if (topic == haLwtTopic && payloadAsStr === 'online') {
                 this.#publishAllHaDiscoveryMessages()
             }
@@ -131,7 +132,7 @@ export class MqttPublisherImpl implements MqttPublisher {
 
     #publishHaDiscoveryMessage(meter: MeterInfo, channels: ChannelsDB) {
         const deviceSerial = meter.ID_DEVICE;
-        console.log(`Publishing HA discovery prefix for device ${deviceSerial}`)
+        logger.info(`Publishing HA discovery prefix for device ${deviceSerial}`)
         const commonAttrs = {
             "availability_topic": this.lwtTopic,
             "device": {
