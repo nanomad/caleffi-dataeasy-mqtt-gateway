@@ -152,7 +152,7 @@ export class MqttPublisherImpl implements MqttPublisher {
             const deviceUniqueId = `caleffi_dataeasy_${deviceSerial}_${i.toString()}`;
             const discoveryMessage = {
                 "name": decodeLabel(channel),
-                "unique_id ": deviceUniqueId,
+                "unique_id": deviceUniqueId,
                 "object_id": deviceUniqueId,
                 "default_entity_id": `${domain}.${deviceUniqueId}`,
                 "device_class": deviceClass,
@@ -171,7 +171,7 @@ export class MqttPublisherImpl implements MqttPublisher {
         const deviceUniqueId = `caleffi_dataeasy_${deviceSerial}_last_update`;
         const discoveryMessage = {
             "name": "Last Update",
-            "unique_id ": deviceUniqueId,
+            "unique_id": deviceUniqueId,
             "object_id": deviceUniqueId,
             "default_entity_id": `${domain}.${deviceUniqueId}`,
             "device_class": "timestamp",
