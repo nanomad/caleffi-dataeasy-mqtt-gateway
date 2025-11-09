@@ -153,7 +153,6 @@ export class MqttPublisherImpl implements MqttPublisher {
             const discoveryMessage = {
                 "name": decodeLabel(channel),
                 "unique_id ": deviceUniqueId,
-                "object_id": deviceUniqueId,
                 "device_class": deviceClass,
                 "state_class": stateClass,
                 "unit_of_measurement": unit,
@@ -171,7 +170,6 @@ export class MqttPublisherImpl implements MqttPublisher {
         const discoveryMessage = {
             "name": "Last Update",
             "unique_id ": deviceUniqueId,
-            "object_id": deviceUniqueId,
             "device_class": "timestamp",
             "state_topic": this.#getLastUpdateTopic(meter),
             ...commonAttrs,
