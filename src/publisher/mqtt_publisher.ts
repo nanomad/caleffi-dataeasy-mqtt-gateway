@@ -138,6 +138,7 @@ export class MqttPublisherImpl implements MqttPublisher {
         const commonAttrs = {
             "availability_topic": this.lwtTopic,
             "device": {
+                "manufacturer": "Caleffi",
                 "identifiers": deviceSerial,
                 "name": `Caleffi DataEasy ${meter.NAME_CUSTOMER}`,
                 "serial_number": deviceSerial,
@@ -151,7 +152,8 @@ export class MqttPublisherImpl implements MqttPublisher {
             const deviceUniqueId = `caleffi_dataeasy_${deviceSerial}_${i.toString()}`;
             const discoveryMessage = {
                 "name": decodeLabel(channel),
-                "default_entity_id ": `${domain}.${deviceUniqueId}`,
+                "unique_id ": deviceUniqueId,
+                "object_id": deviceUniqueId,
                 "device_class": deviceClass,
                 "state_class": stateClass,
                 "unit_of_measurement": unit,
@@ -168,7 +170,8 @@ export class MqttPublisherImpl implements MqttPublisher {
         const deviceUniqueId = `caleffi_dataeasy_${deviceSerial}_last_update`;
         const discoveryMessage = {
             "name": "Last Update",
-            "default_entity_id": `${domain}.${deviceUniqueId}`,
+            "unique_id ": deviceUniqueId,
+            "object_id": deviceUniqueId,
             "device_class": "timestamp",
             "state_topic": this.#getLastUpdateTopic(meter),
             ...commonAttrs,
