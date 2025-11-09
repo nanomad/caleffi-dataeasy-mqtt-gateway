@@ -5,6 +5,7 @@ export interface DataEasyClientConfig {
     baseURL: string;
     username: string;
     password: string;
+    timeoutMs: number;
 }
 
 export interface DataEasyClient {
@@ -24,7 +25,8 @@ export class DataEasyClientImpl implements DataEasyClient {
             auth: {
                 username: config.username,
                 password: config.password,
-            }
+            },
+            timeout: config.timeoutMs,
         })
     }
 

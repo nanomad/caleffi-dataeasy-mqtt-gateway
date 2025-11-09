@@ -8,6 +8,7 @@ export interface MqttPublisherConfig {
     port: number;
     protocol: string;
     tlsServerCertificatePath?: string;
+    connectTimeoutMs: number;
 
     username?: string;
     password?: string;
@@ -51,6 +52,7 @@ export class MqttPublisherImpl implements MqttPublisher {
             clientId: config.clientId,
             caPaths: config.tlsServerCertificatePath,
             manualConnect: true,
+            connectTimeout: config.connectTimeoutMs,
             will: {
                 topic: this.lwtTopic,
                 payload: 'offline',

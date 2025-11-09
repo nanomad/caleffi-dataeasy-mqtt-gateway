@@ -20,6 +20,7 @@ function getConfig(): Configuration {
             baseURL: config.get("api.baseURL"),
             username: config.get("api.username"),
             password: config.get("api.password"),
+            timeoutMs: config.has("api.timeoutMs") ? config.get("api.timeoutMs") : 30_000,
         },
         mqtt: {
             host: config.get("mqtt.host"),
@@ -31,6 +32,7 @@ function getConfig(): Configuration {
             clientId: config.has("mqtt.clientId") ? config.get("mqtt.clientId") : "caleffi-dataeasy",
             tlsServerCertificatePath: config.has("mqtt.tlsServerCertificatePath") ? config.get("mqtt.tlsServerCertificatePath") : undefined,
             haDiscoveryPrefix: config.has("mqtt.haDiscoveryPrefix") ? config.get("mqtt.haDiscoveryPrefix") : "homeassistant",
+            connectTimeoutMs: config.has("mqtt.connectTimeoutMs") ? config.get("mqtt.connectTimeoutMs") : 30_000,
         }
     };
 }
