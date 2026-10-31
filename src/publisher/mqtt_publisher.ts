@@ -30,6 +30,8 @@ export interface MeterEntry {
     channels: ChannelsDB;
 }
 
+const ALLOWED_PROTOCOLS = ["mqtt", "mqtts", "ws", "wss"];
+
 export class MqttPublisherImpl implements MqttPublisher {
 
     private readonly client: MqttClient;
@@ -41,6 +43,13 @@ export class MqttPublisherImpl implements MqttPublisher {
 
     constructor(config: MqttPublisherConfig) {
         const brokerPort = config.port;
+        if (!ALLOWED_PROTOCOLS.includes(config.protocol)) {
+            throw new Error(`Unsupported mqtt.protocol "${config.protocol}", use one of ${ALLOWED_PROTOCOLS.join(", ")}`);
+        }
+        const tls = config.protocol === "mqtts" || config.protocol === "wss";
+        if (!tls) {
+            logger.warn("MQTT connection is not encrypted: " + (config.username ? "credentials and " : "") + "data travel in cleartext. Use mqtts://");
+        }
         const brokerUrl = `${config.protocol}://${config.host}:${brokerPort.toString()}`;
         this.topicRoot = config.topicRoot
         this.lwtTopic = `${this.topicRoot}/_internal/lwt`;
@@ -51,6 +60,7 @@ export class MqttPublisherImpl implements MqttPublisher {
             password: config.password,
             clientId: config.clientId,
             caPaths: config.tlsServerCertificatePath,
+            rejectUnauthorized: true,
             manualConnect: true,
             connectTimeout: config.connectTimeoutMs,
             will: {

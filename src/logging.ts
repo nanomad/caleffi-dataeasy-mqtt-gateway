@@ -6,5 +6,13 @@ export const logger: Logger = pino({
     },
     level: process.env.PINO_LOG_LEVEL ?? 'info',
 
-    redact: [], // prevent logging of sensitive data
+    redact: {
+        paths: [
+            'password', '*.password', 'username', '*.username',
+            'config.api.password', 'config.mqtt.password',
+            'req.headers.authorization', 'headers.authorization',
+            'config.headers.Authorization', 'err.config.auth', 'err.config.headers.Authorization',
+        ],
+        censor: '[redacted]',
+    },
 });
