@@ -2,6 +2,7 @@ import {AsyncTask, SimpleIntervalJob, ToadScheduler} from "toad-scheduler";
 import {ChannelsDB, MeterInfo} from "./api/types.js";
 import {DataEasyClientConfig, DataEasyClientImpl} from "./api/client.js";
 import {MqttPublisherConfig, MqttPublisherImpl} from "./publisher/mqtt_publisher.js";
+import {readFileSync} from "node:fs";
 import config from 'config';
 import {logger} from './logging.js';
 
@@ -12,22 +13,57 @@ interface Configuration {
     mqtt: MqttPublisherConfig
 }
 
+/**
+ * Reads a secret from `<ENV>_FILE` (Docker/Kubernetes secret file), then `<ENV>`,
+ * then falls back to the config file.
+ */
+function secret(envName: string, configKey: string): string | undefined {
+    const file = process.env[`${envName}_FILE`];
+    if (file) {
+        return readFileSync(file, "utf8").trim();
+    }
+    const fromEnv = process.env[envName];
+    if (fromEnv) {
+        return fromEnv;
+    }
+    return config.has(configKey) ? config.get<string>(configKey) : undefined;
+}
+
+function requireSecret(envName: string, configKey: string): string {
+    const value = secret(envName, configKey);
+    if (value === undefined) {
+        throw new Error(`Missing ${envName}[_FILE] or config key ${configKey}`);
+    }
+    return value;
+}
+
+function validateBaseUrl(raw: string): string {
+    const url = new URL(raw);
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+        throw new Error(`api.baseURL must be http(s), got ${url.protocol}`);
+    }
+    if (url.protocol === "http:") {
+        logger.warn("api.baseURL uses plain HTTP: Basic credentials are sent in cleartext. Keep the device on an isolated network.");
+    }
+    return raw;
+}
+
 function getConfig(): Configuration {
     return {
         devices: config.get<string>('devices').split(","),
         refreshIntervalMinutes: config.has('refreshIntervalMinutes') ? config.get('refreshIntervalMinutes') : 5,
         api: {
-            baseURL: config.get("api.baseURL"),
-            username: config.get("api.username"),
-            password: config.get("api.password"),
+            baseURL: validateBaseUrl(config.get("api.baseURL")),
+            username: requireSecret("API_USERNAME", "api.username"),
+            password: requireSecret("API_PASSWORD", "api.password"),
             timeoutMs: config.has("api.timeoutMs") ? config.get("api.timeoutMs") : 30_000,
         },
         mqtt: {
             host: config.get("mqtt.host"),
             port: config.get("mqtt.port"),
             protocol: config.has("mqtt.protocol") ? config.get("mqtt.protocol") : "mqtt",
-            username: config.has("mqtt.username") ? config.get("mqtt.username") : undefined,
-            password: config.has("mqtt.password") ? config.get("mqtt.password") : undefined,
+            username: secret("MQTT_USERNAME", "mqtt.username"),
+            password: secret("MQTT_PASSWORD", "mqtt.password"),
             topicRoot: config.has("mqtt.topicRoot") ? config.get("mqtt.topicRoot") : "caleffi-dataeasy",
             clientId: config.has("mqtt.clientId") ? config.get("mqtt.clientId") : "caleffi-dataeasy",
             tlsServerCertificatePath: config.has("mqtt.tlsServerCertificatePath") ? config.get("mqtt.tlsServerCertificatePath") : undefined,
