@@ -7,9 +7,9 @@ updates:
     directory: /
     schedule: {interval: weekly}
     ignore:
-      # Stay on even-numbered LTS lines; bump major node versions manually
+      # Skip odd-numbered (non-LTS) node releases; even majors still get PRs
       - dependency-name: node
-        update-types: ["version-update:semver-major"]
+        versions: ["25.x", "27.x", "29.x", "31.x"]
   - package-ecosystem: github-actions
     directory: /
     schedule: {interval: weekly}
