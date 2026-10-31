@@ -50,7 +50,7 @@ function validateBaseUrl(raw: string): string {
 
 function getConfig(): Configuration {
     return {
-        devices: config.get<string>('devices').split(","),
+        devices: config.get<string>('devices').split(",").map(d => d.trim()).filter(d => d !== ""),
         refreshIntervalMinutes: config.has('refreshIntervalMinutes') ? config.get('refreshIntervalMinutes') : 5,
         api: {
             baseURL: validateBaseUrl(config.get("api.baseURL")),
@@ -83,7 +83,20 @@ async function fetchData(meter: MeterInfo, channels: ChannelsDB) {
 
 
 async function main(config: Configuration) {
+    logger.info(
+        `Starting: devices=[${config.devices.join(", ")}], refresh every ${config.refreshIntervalMinutes.toString()} min, ` +
+        `API ${new URL(config.api.baseURL).origin}, MQTT ${config.mqtt.protocol}://${config.mqtt.host}:${config.mqtt.port.toString()}`
+    );
     const metersDB = await client.getMeters();
+    const available = metersDB.meters.map(m => m.ID_DEVICE);
+    logger.info(`Gateway reports ${available.length.toString()} meter(s): [${available.join(", ")}]`);
+    const missing = config.devices.filter(d => !available.includes(d));
+    if (missing.length > 0) {
+        logger.warn(`Configured devices not found on the gateway: [${missing.join(", ")}]`);
+    }
+    if (missing.length === config.devices.length) {
+        logger.warn("None of the configured devices match a meter on the gateway: nothing will be published. Check the 'devices' setting against the serials above.");
+    }
     for (const meter of metersDB.meters) {
         const deviceSerial = meter.ID_DEVICE;
         const deviceIdx = config.devices.indexOf(deviceSerial);
