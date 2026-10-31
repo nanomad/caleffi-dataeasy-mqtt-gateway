@@ -21,3 +21,34 @@ jobs:
       - run: npm run build
       - run: npm run lint
       - run: npm audit --omit=dev --audit-level=high
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - name: Build image (no push)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: dataeasy-ci:test
+          cache-from: type=gha,scope=ci
+          cache-to: type=gha,mode=max,scope=ci
+      - name: Smoke test as arbitrary UID with GID 0 (OpenShift)
+        run: |
+          mkdir cfg
+          echo '{"devices":"X1","api":{"baseURL":"http://127.0.0.1:9","username":"u","password":"p"},"mqtt":{"host":"127.0.0.1","port":1883}}' > cfg/default.json
+          chmod -R a+rX cfg
+          out=$(docker run --rm --user 123456:0 -e NODE_CONFIG_DIR=/cfg -e PINO_TRANSPORT=pino/file \
+            -v "$PWD/cfg:/cfg:ro" dataeasy-ci:test sh -c 'id -u; timeout 8 node dist/index.js 2>&1 || true')
+          echo "$out"
+          echo "$out" | grep -q '^123456$'
+          echo "$out" | grep -q 'ECONNREFUSED'   # app started, loaded config and reached the API call
+      - name: Verify non-root default user
+        run: test "$(docker run --rm --entrypoint id dataeasy-ci:test -u)" != "0"
+      - name: Verify no secrets in logs
+        run: |
+          out=$(docker run --rm --user 123456:0 -e NODE_CONFIG_DIR=/cfg -e PINO_TRANSPORT=pino/file \
+            -v "$PWD/cfg:/cfg:ro" dataeasy-ci:test sh -c 'timeout 8 node dist/index.js 2>&1 || true')
+          ! echo "$out" | grep -qE 'Authorization: Basic|dTpw'
