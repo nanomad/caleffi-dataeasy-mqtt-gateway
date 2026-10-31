@@ -2,14 +2,28 @@ version: 2
 updates:
   - package-ecosystem: npm
     directory: /
-    schedule: {interval: weekly}
+    schedule: {interval: monthly}
+    # Don't propose releases younger than a week (supply-chain safety)
+    cooldown:
+      default-days: 7
+    groups:
+      # One PR for all minor/patch bumps; majors stay separate for review
+      npm-minor-patch:
+        update-types: ["minor", "patch"]
   - package-ecosystem: docker
     directory: /
-    schedule: {interval: weekly}
+    schedule: {interval: monthly}
+    cooldown:
+      default-days: 7
     ignore:
       # Skip odd-numbered (non-LTS) node releases; even majors still get PRs
       - dependency-name: node
         versions: ["25.x", "27.x", "29.x", "31.x"]
   - package-ecosystem: github-actions
     directory: /
-    schedule: {interval: weekly}
+    schedule: {interval: monthly}
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns: ["*"]
