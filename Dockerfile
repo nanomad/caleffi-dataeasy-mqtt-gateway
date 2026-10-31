@@ -1,35 +1,42 @@
 # Stage 1: Build
 FROM node:24-alpine AS builder
 
-# Set the working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json (if available)
 COPY package*.json ./
+RUN npm ci --ignore-scripts
 
-# Install dependencies
-RUN npm ci
-
-# Copy the rest of the application
-COPY . .
-
-# Compile TypeScript
+COPY tsconfig.json ./
+COPY src ./src
 RUN npm run build
 
-# Stage 2: Run
-FROM node:24-alpine
+# Stage 2: Production dependencies only
+FROM node:24-alpine AS deps
 
-# Set the working directory
 WORKDIR /app
 
-RUN mkdir "config"
+COPY package*.json ./
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
-# Copy only the necessary files from the builder stage
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/dist ./dist
+# Stage 3: Run
+FROM node:24-alpine
 
-VOLUME ["config"]
+ENV NODE_ENV=production
+WORKDIR /app
 
-# Set the default command (modify if necessary)
+COPY --from=deps --chown=root:root /app/package*.json ./
+COPY --from=deps --chown=root:root /app/node_modules ./node_modules
+COPY --from=builder --chown=root:root /app/dist ./dist
+
+# OpenShift runs containers with a random UID and GID 0. Give group 0 the same
+# access as the owner so any UID in group 0 can read the app and config.
+# The app only needs read access; nothing is writable at runtime.
+RUN mkdir config \
+    && chgrp -R 0 /app \
+    && chmod -R g=u /app
+VOLUME ["/app/config"]
+
+# Numeric UID so Kubernetes/OpenShift can verify runAsNonRoot
+USER 1000
+
 CMD ["node", "dist/index.js"]
