@@ -20,7 +20,7 @@ jobs:
       # support dockerhub organizations. If none is present, use the dockerhub username
       DOCKERHUB_ORGANIZATION: ${{ secrets.DOCKERHUB_ORGANIZATION == null && secrets.DOCKERHUB_USERNAME || secrets.DOCKERHUB_ORGANIZATION }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Set env
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
 
