@@ -1,4 +1,6 @@
 import axios, {AxiosInstance, AxiosResponse} from "axios";
+import {isSafeIdentifier, isSafeKey} from "../utils.js";
+import {logger} from "../logging.js";
 import {ChannelDefinition, ChannelsDB, MeterInfo, MeterReading, MeterReadings, MetersDB} from "./types.js";
 
 export interface DataEasyClientConfig {
@@ -16,6 +18,8 @@ export interface DataEasyClient {
     getLastMeterReadings(device: MeterInfo, channels: ChannelsDB): Promise<MeterReadings>;
 }
 
+const MAX_RESPONSE_BYTES = 5 * 1024 * 1024;
+
 export class DataEasyClientImpl implements DataEasyClient {
     private readonly client: AxiosInstance;
 
@@ -27,6 +31,10 @@ export class DataEasyClientImpl implements DataEasyClient {
                 password: config.password,
             },
             timeout: config.timeoutMs,
+            // never follow redirects: Basic credentials must not be forwarded elsewhere
+            maxRedirects: 0,
+            maxContentLength: MAX_RESPONSE_BYTES,
+            maxBodyLength: MAX_RESPONSE_BYTES,
         })
     }
 
@@ -59,7 +67,11 @@ export class DataEasyClientImpl implements DataEasyClient {
 
             if (values.length > 2) {
                 for (let j = 1; j < values.length - 1; j++) {
-                    entry[keys[j]] = values[j];
+                    const key = keys[j] as string | undefined;
+                    if (key === undefined || !isSafeKey(key)) {
+                        continue;
+                    }
+                    entry[key] = values[j];
                 }
             }
 
@@ -108,14 +120,29 @@ export class DataEasyClientImpl implements DataEasyClient {
 
     static #parseDeviceRecords(data: string): MeterInfo[] {
         const lines = data.trim().split("\r\n");
+        if (lines.length < 2) {
+            throw new Error("Unexpected meter list format");
+        }
         const headers = lines[1].split(";");
 
         return lines.slice(2).map(line => {
             const values = line.split(";");
             return headers.reduce((acc, key, index) => {
-                acc[key as keyof MeterInfo] = values[index];
+                if (isSafeKey(key)) {
+                    acc[key as keyof MeterInfo] = values[index];
+                }
                 return acc;
             }, {} as MeterInfo);
+        }).filter(meter => {
+            // device fields end up in request paths, MQTT topics and HA entity ids
+            const ok = isSafeIdentifier(meter.ID_DEVICE)
+                && isSafeIdentifier(meter.MANF_CODE)
+                && isSafeIdentifier(meter.MEDIUM)
+                && isSafeIdentifier(meter.VERSION);
+            if (!ok) {
+                logger.warn("Ignoring meter record with unsafe identifiers");
+            }
+            return ok;
         });
     };
 
